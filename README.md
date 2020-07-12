@@ -1,3 +1,9 @@
-![iffb_prob_image](https://raw.githubusercontent.com/dlependorf/dlependorf/master/iffb_image.png)
 
-Hey there. I'm Dan Lependorf, and I'm a Sr. Data Scientist at [The Athletic](https://theathletic.com/). I used to work as a baseball analyst, hence the plot above. I mostly work in R, and I'll put side projects and any other fun non-work stuff here.
+![iffb\_location\_image](https://github.com/dlependorf/dlependorf/blob/master/iffb_image.png)
+Hey there. I’m Dan Lependorf, and I’m a Sr. Data Scientist at [The
+Athletic](https://theathletic.com/). I used to work as a baseball
+analyst, hence the plot above. I’ll put side projects and any other fun
+non-work stuff here.
+
+The code used to generate the plot above is in the R Markdown file in
+this repo.

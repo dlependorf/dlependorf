@@ -1,0 +1,89 @@
+---
+    output: github_document
+---
+    
+    ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include=FALSE)
+
+library(tidyverse)
+library(ragg)
+library(magick)
+
+# This dataset consists of about a million and a half pitches from 2008-2017, as captured by PITCHf/x. None of these
+# pitches were seen by the model during training. The model uses the XGBoost algorithm, and the XGBoost raw scores are
+# in the "prediction" column. These scores were then fed into a logistic regression scaling model to bring the infield
+# flyball predicted scores in line with how often infield flyballs actually occur. This score is in the
+# "calibrated_prediction" column. Pitch locations were normalized for strike zone dimensions so all pitch locations are
+# given in coordinates where the strike zone is the square from -1 to 1 in both axes. Additionally, all pitch locations
+# were mirrored if needed so the data always represents a pitch thrown from a right-handed pitcher.
+load("./holdout_pitch_data.Rda")
+```
+
+```{r generate_plot}
+set.seed(17)
+
+# I'm sampling a random 50% of both sets of handedness, since plotting 600K+ points per plot just gets a little messy.
+crosshanded_data <- holdout_pitch_data %>%
+    filter(handedness=="cross_handed") %>%
+    sample_frac(0.5) %>%
+    arrange(calibrated_prediction)
+
+samehanded_data <- holdout_pitch_data %>%
+    filter(handedness=="same_handed") %>%
+    sample_frac(0.5) %>%
+    arrange(calibrated_prediction)
+
+# I'm capturing each plot in an agg device and then laying out the two plots using magick.
+location_crosshanded <- agg_capture(width=1200, height=1200, res=200)
+ggplot(data=crosshanded_data) +
+    geom_point(aes(x=norm_px, y=norm_pz, color=calibrated_prediction), alpha=0.2, pch=16) +
+    geom_rect(aes(xmin=-1, xmax=1, ymin=-1, ymax=1), color="#FFFFFF", alpha=0, size=2) +
+    scale_color_gradient(low="#001324", high="#00D4FF",
+                         labels=scales::percent,
+                         breaks=seq(0, 0.05, by=0.01),
+                         guide=guide_colorbar(draw.llim=FALSE, draw.ulim=FALSE, label.position="left")) +
+    scale_x_continuous(limits=c(-4, 4)) +
+    scale_y_continuous(limits=c(-4, 4)) +
+    labs(title="Predicted Infield Flyball Probability",
+         subtitle="Pitcher/Batter Cross Handed, Batter on Right",
+         caption="\n") +
+    coord_equal() +
+    theme_void() +
+    theme(legend.title=element_blank(),
+          plot.title=element_text(face="bold"),
+          legend.position="left")
+
+location_samehanded <- agg_capture(width=1200, height=1200, res=200)
+ggplot(data=samehanded_data) +
+    geom_point(aes(x=norm_px, y=norm_pz, color=calibrated_prediction), alpha=0.2, pch=16) +
+    geom_rect(aes(xmin=-1, xmax=1, ymin=-1, ymax=1), color="#FFFFFF", alpha=0, size=2) +
+    scale_color_gradient(low="#001324", high="#FF7C00",
+                         labels=scales::percent,
+                         breaks=seq(0, 0.05, by=0.01),
+                         guide=guide_colorbar(draw.llim=FALSE, draw.ulim=FALSE)) +
+    # I'm using a reversed x-axis here, because I think the plot works better if the batter is on the same side of the
+    # plate for both plots.
+    scale_x_reverse(limits=c(4, -4)) +
+    scale_y_continuous(limits=c(-4, 4)) +
+    labs(title="",
+         subtitle="Pitcher/Batter Same Handed, Batter on Right",
+         caption="Probabilities from an XGBoost model trained on 6 million pitches across 10 years of PITCHf/x data.\n
+                  Pitch locations normalized for strike zone height.") +
+    coord_equal() +
+    theme_void() +
+    theme(legend.title=element_blank(),
+          plot.title=element_text(face="bold"),
+          plot.caption=element_text(hjust=1, lineheight=0.5))
+
+img_location_crosshanded <- image_read(location_crosshanded())
+img_location_samehanded <- image_read(location_samehanded())
+
+location_plot <- image_append(c(img_location_crosshanded, img_location_samehanded))
+
+image_write(location_plot, "./iffb_location_plot.png", format="png")
+```
+
+![iffb_location_image](https://github.com/dlependorf/dlependorf/blob/master/iffb_image.png)
+Hey there. I'm Dan Lependorf, and I'm a Sr. Data Scientist at [The Athletic](https://theathletic.com/). I used to work as a baseball analyst, hence the plot above. I'll put side projects and any other fun non-work stuff here.
+
+The code used to generate the plot above is in the R Markdown file in this repo.

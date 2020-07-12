@@ -7,4 +7,5 @@ analyst, hence the plot above. I’ll put side projects and any other fun
 non-work stuff here.
 
 The code used to generate the plot above is in the R Markdown file in
-this repo.
+this repo
+[here](https://github.com/dlependorf/dlependorf/blob/master/README.Rmd).
